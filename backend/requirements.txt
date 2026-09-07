@@ -1,0 +1,57 @@
+# --- Phase 1: Foundation ---
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+websockets==13.1
+pydantic==2.9.2
+pydantic-settings==2.6.1
+SQLAlchemy==2.0.36
+psycopg[binary]==3.2.3
+alembic==1.14.0
+python-dotenv==1.0.1
+python-multipart==0.0.17
+
+# --- Phase 2: AI ---
+anthropic==0.39.0
+httpx==0.27.2
+
+# --- Phase 2b: Web tools (search_web, read_webpage) ---
+beautifulsoup4==4.12.3
+
+# --- Phase 3: Voice ---
+edge-tts==6.1.19            # TTS_PROVIDER=edge (default, free, no key)
+faster-whisper==1.0.3       # STT_PROVIDER=whisper_local (default, free, offline)
+openwakeword==0.6.0         # wake word detection
+numpy==1.26.4
+
+# --- Phase 4: Computer control ---
+pyautogui==0.9.54
+pygetwindow==0.0.9
+psutil==6.1.0
+pycaw==20240210             # Windows volume control
+comtypes==1.4.6             # pycaw dependency
+win10toast-click==0.1.2     # Windows toast notifications
+plyer==2.1.0                # cross-platform notification fallback
+
+# --- Phase 5: Vision ---
+mss==9.0.2                  # fast screen capture
+Pillow==11.0.0
+
+# --- Phase 7: Memory ---
+pgvector==0.3.6
+sentence-transformers==3.3.1   # EMBEDDING_PROVIDER=local (default, free, offline)
+
+# --- Phase 9: Scheduling ---
+APScheduler==3.10.4
+
+# --- Phase 10: MCP ---
+mcp==1.1.2
+
+# --- Phase 11: Packaging ---
+pyinstaller==6.11.1
+
+# --- Testing ---
+pytest==8.3.3
+pytest-asyncio==0.24.0
+
+# pytest-asyncio requires this line in pytest.ini/pyproject to auto-mark
+# async tests — see backend/pytest.ini

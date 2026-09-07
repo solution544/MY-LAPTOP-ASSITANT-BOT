@@ -1,0 +1,19 @@
+# Optional: the easiest way to get PostgreSQL + pgvector running on Windows
+# is Docker Desktop, rather than a native install. See README.md "Database
+# Setup" for both options.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: solution-ai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: solution_ai
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: solution_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - solution_ai_pgdata:/var/lib/postgresql/data
+
+volumes:
+  solution_ai_pgdata:

@@ -1,0 +1,42 @@
+{
+  "name": "solution-ai",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Solution AI — a JARVIS-style personal AI agent (desktop).",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:electron": "electron desktop/electron/main.js",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:electron": "tsc -p desktop/electron/tsconfig.json",
+    "build:backend": "pyinstaller --onefile --name solution-ai-backend --paths backend backend/main.py",
+    "dist": "npm run build:frontend && npm run build:electron && electron-builder"
+  },
+  "build": {
+    "appId": "ai.solution.desktop",
+    "productName": "Solution AI",
+    "directories": { "output": "release" },
+    "files": [
+      "dist-electron/**/*",
+      "frontend/dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "dist/solution-ai-backend.exe", "to": "backend/solution-ai-backend.exe" }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "desktop/build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.6.3"
+  }
+}
