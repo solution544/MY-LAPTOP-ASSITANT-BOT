@@ -1,6 +1,5 @@
-```python
-"""
-SQLAlchemy engine and session factory.
+
+"""SQLAlchemy engine and session factory.
 
 A single engine is created from `Settings.database_url`.
 `get_db()` is a FastAPI dependency that yields a session per request
