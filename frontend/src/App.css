@@ -1,3 +1,7 @@
+/* =========================================================
+   GLOBAL RESET
+========================================================= */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -20,6 +24,7 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+
   background: #05070d;
   color: #ffffff;
 }
@@ -29,14 +34,46 @@ input {
   font: inherit;
 }
 
-/* =========================================
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(0, 229, 255, 0.25);
+  color: #ffffff;
+}
+
+/* =========================================================
+   SCROLLBARS
+========================================================= */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.35);
+}
+
+/* =========================================================
    APP
-========================================= */
+========================================================= */
 
 .app {
   width: 100%;
   height: 100vh;
   min-height: 100vh;
+
   background:
     radial-gradient(
       circle at 50% 42%,
@@ -44,31 +81,37 @@ input {
       transparent 32%
     ),
     #05070d;
+
   color: #ffffff;
   overflow: hidden;
   position: relative;
 }
 
-/* =========================================
+/* =========================================================
    HEADER
-========================================= */
+========================================================= */
 
 .header {
   height: 70px;
   width: 100%;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   padding: 0 22px;
 
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
   background: rgba(5, 7, 13, 0.82);
+
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 
   position: fixed;
   top: 0;
   left: 0;
+
   z-index: 100;
 }
 
@@ -80,11 +123,14 @@ input {
   display: flex;
   align-items: center;
   gap: 9px;
+
+  user-select: none;
 }
 
 .logo-dot {
   width: 8px;
   height: 8px;
+
   border-radius: 50%;
 
   background: #00e5ff;
@@ -100,7 +146,8 @@ input {
 
   border: none;
   background: transparent;
-  color: white;
+
+  color: #ffffff;
 
   display: flex;
   align-items: center;
@@ -110,7 +157,10 @@ input {
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .icon-button:hover {
@@ -118,9 +168,13 @@ input {
   color: #00e5ff;
 }
 
-/* =========================================
+.icon-button:active {
+  transform: scale(0.92);
+}
+
+/* =========================================================
    SIDEBAR
-========================================= */
+========================================================= */
 
 .sidebar {
   position: fixed;
@@ -138,11 +192,15 @@ input {
   padding: 25px;
 
   transform: translateX(-100%);
+
   transition: transform 0.3s ease;
 
   z-index: 90;
 
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  overflow-y: auto;
 }
 
 .sidebar.open {
@@ -152,9 +210,12 @@ input {
 .sidebar-title {
   font-size: 14px;
   font-weight: 700;
+
   letter-spacing: 2px;
 
   margin-bottom: 25px;
+
+  color: #ffffff;
 }
 
 .new-chat {
@@ -167,18 +228,35 @@ input {
   border: 1px solid rgba(255, 255, 255, 0.1);
 
   background: #111624;
-  color: white;
+
+  color: #ffffff;
 
   cursor: pointer;
 
   margin-bottom: 25px;
 
-  transition: 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .new-chat:hover {
   border-color: rgba(0, 229, 255, 0.4);
+
   background: rgba(0, 229, 255, 0.08);
+
+  transform: translateY(-1px);
+}
+
+.new-chat:active {
+  transform: scale(0.98);
 }
 
 .sidebar nav {
@@ -189,6 +267,11 @@ input {
 
 .sidebar nav button {
   width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
 
   text-align: left;
 
@@ -204,17 +287,26 @@ input {
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .sidebar nav button:hover {
   background: #111624;
-  color: white;
+  color: #ffffff;
+
+  transform: translateX(2px);
 }
 
-/* =========================================
+.sidebar nav button:active {
+  transform: scale(0.98);
+}
+
+/* =========================================================
    MAIN
-========================================= */
+========================================================= */
 
 .main {
   width: 100%;
@@ -230,9 +322,9 @@ input {
   overflow: hidden;
 }
 
-/* =========================================
+/* =========================================================
    ROBOT AREA
-========================================= */
+========================================================= */
 
 .robot-container {
   flex: 1;
@@ -255,9 +347,9 @@ input {
   overflow-y: auto;
 }
 
-/* =========================================
+/* =========================================================
    ROBOT GLOW
-========================================= */
+========================================================= */
 
 .robot-glow {
   position: absolute;
@@ -278,9 +370,9 @@ input {
   pointer-events: none;
 }
 
-/* =========================================
+/* =========================================================
    ROBOT
-========================================= */
+========================================================= */
 
 .robot {
   position: relative;
@@ -311,9 +403,9 @@ input {
   animation: robotFloat 4s ease-in-out infinite;
 }
 
-/* =========================================
+/* =========================================================
    ANTENNA
-========================================= */
+========================================================= */
 
 .antenna {
   position: absolute;
@@ -351,9 +443,9 @@ input {
   animation: pulse 1.5s infinite;
 }
 
-/* =========================================
+/* =========================================================
    ROBOT FACE
-========================================= */
+========================================================= */
 
 .robot-face {
   position: absolute;
@@ -372,9 +464,9 @@ input {
   align-items: center;
 }
 
-/* =========================================
+/* =========================================================
    EYES
-========================================= */
+========================================================= */
 
 .eyes {
   display: flex;
@@ -399,9 +491,9 @@ input {
   animation: blink 5s infinite;
 }
 
-/* =========================================
+/* =========================================================
    MOUTH
-========================================= */
+========================================================= */
 
 .mouth {
   width: 70px;
@@ -430,9 +522,9 @@ input {
   border-radius: 10px;
 }
 
-/* =========================================
+/* =========================================================
    VOICE STATUS
-========================================= */
+========================================================= */
 
 .voice-status {
   position: relative;
@@ -455,6 +547,8 @@ input {
   width: 7px;
   height: 7px;
 
+  flex-shrink: 0;
+
   border-radius: 50%;
 
   background: #00e5ff;
@@ -466,17 +560,17 @@ input {
   animation: statusPulse 1s infinite;
 }
 
-/* =========================================
+/* =========================================================
    OLD MIC BUTTON
-========================================= */
+========================================================= */
 
 .mic-button {
   display: none;
 }
 
-/* =========================================
+/* =========================================================
    TRANSCRIPT
-========================================= */
+========================================================= */
 
 .transcript {
   position: relative;
@@ -499,6 +593,7 @@ input {
   border: 1px solid rgba(255, 255, 255, 0.1);
 
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 
   animation: messageAppear 0.25s ease;
 }
@@ -525,9 +620,495 @@ input {
   word-break: break-word;
 }
 
-/* =========================================
+/* =========================================================
+   SIDE PANEL
+========================================================= */
+
+.side-panel {
+  position: fixed;
+
+  top: 85px;
+  right: 20px;
+
+  width: min(420px, calc(100vw - 40px));
+
+  max-height: calc(100vh - 105px);
+
+  background: rgba(10, 14, 24, 0.96);
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(0, 229, 255, 0.04);
+
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+
+  z-index: 95;
+
+  overflow: hidden;
+
+  animation: panelAppear 0.25s ease;
+}
+
+/* =========================================================
+   SIDE PANEL HEADER
+========================================================= */
+
+.side-panel-header {
+  min-height: 62px;
+
+  padding: 0 17px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.side-panel-header h2 {
+  font-size: 16px;
+
+  font-weight: 650;
+
+  letter-spacing: 0.3px;
+}
+
+.side-panel-header button {
+  width: 36px;
+  height: 36px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: #8f99aa;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.side-panel-header button:hover {
+  background: rgba(255, 255, 255, 0.07);
+
+  color: #ffffff;
+}
+
+.side-panel-header button:active {
+  transform: scale(0.9);
+}
+
+/* =========================================================
+   CONVERSATION LIST
+========================================================= */
+
+.conversation-list {
+  padding: 15px;
+
+  max-height: calc(100vh - 170px);
+
+  overflow-y: auto;
+}
+
+/* =========================================================
+   PANEL NEW CHAT
+========================================================= */
+
+.panel-new-chat {
+  width: 100%;
+
+  min-height: 44px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  border-radius: 10px;
+
+  border: 1px solid rgba(0, 229, 255, 0.18);
+
+  background: rgba(0, 229, 255, 0.07);
+
+  color: #dffcff;
+
+  cursor: pointer;
+
+  margin-bottom: 14px;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.panel-new-chat:hover {
+  background: rgba(0, 229, 255, 0.12);
+
+  border-color: rgba(0, 229, 255, 0.35);
+
+  transform: translateY(-1px);
+}
+
+.panel-new-chat:active {
+  transform: scale(0.98);
+}
+
+/* =========================================================
+   CONVERSATION ITEMS
+========================================================= */
+
+.conversation-items {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.conversation-item {
+  width: 100%;
+
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 11px;
+
+  padding: 12px;
+
+  border-radius: 11px;
+
+  border: 1px solid transparent;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  color: #cbd3e1;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.conversation-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+
+  border-color: rgba(255, 255, 255, 0.08);
+
+  transform: translateX(2px);
+}
+
+.conversation-item.active {
+  background: rgba(0, 229, 255, 0.08);
+
+  border-color: rgba(0, 229, 255, 0.2);
+
+  color: #ffffff;
+}
+
+.conversation-item > svg {
+  flex-shrink: 0;
+
+  margin-top: 2px;
+
+  color: #00e5ff;
+}
+
+.conversation-item div {
+  min-width: 0;
+
+  flex: 1;
+}
+
+.conversation-item strong {
+  display: block;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  line-height: 1.35;
+
+  color: #ffffff;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.conversation-item small {
+  display: block;
+
+  margin-top: 5px;
+
+  font-size: 10px;
+
+  line-height: 1.3;
+
+  color: #737d90;
+}
+
+/* =========================================================
+   PANEL EMPTY / LOADING
+========================================================= */
+
+.panel-empty {
+  padding: 28px 12px;
+
+  text-align: center;
+
+  color: #737d90;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+}
+
+/* =========================================================
+   REFRESH BUTTON
+========================================================= */
+
+.refresh-button {
+  width: 100%;
+
+  min-height: 40px;
+
+  margin-top: 13px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  border-radius: 9px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(255, 255, 255, 0.035);
+
+  color: #929caf;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+
+  color: #ffffff;
+
+  border-color: rgba(255, 255, 255, 0.13);
+}
+
+.refresh-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   SETTINGS PANEL
+========================================================= */
+
+.settings-panel {
+  padding: 15px;
+
+  max-height: calc(100vh - 170px);
+
+  overflow-y: auto;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.setting-item {
+  padding: 14px;
+
+  border-radius: 11px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  background: rgba(255, 255, 255, 0.035);
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.setting-item strong {
+  font-size: 12px;
+
+  font-weight: 600;
+
+  color: #ffffff;
+}
+
+.setting-item span {
+  font-size: 12px;
+
+  line-height: 1.45;
+
+  color: #7f899c;
+
+  word-break: break-word;
+}
+
+/* =========================================================
+   ERROR MESSAGE
+========================================================= */
+
+.error-message {
+  position: fixed;
+
+  top: 84px;
+
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: min(700px, calc(100vw - 30px));
+
+  min-height: 44px;
+
+  padding: 10px 12px 10px 15px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  background: rgba(60, 18, 25, 0.95);
+
+  border: 1px solid rgba(239, 68, 68, 0.3);
+
+  border-radius: 11px;
+
+  color: #fecaca;
+
+  font-size: 13px;
+
+  line-height: 1.4;
+
+  z-index: 120;
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.3);
+
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+
+  animation: messageAppear 0.25s ease;
+}
+
+.error-message span {
+  min-width: 0;
+
+  word-break: break-word;
+}
+
+.error-message button {
+  flex-shrink: 0;
+
+  width: 30px;
+  height: 30px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: #fca5a5;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+.error-message button:hover {
+  background: rgba(255, 255, 255, 0.08);
+
+  color: #ffffff;
+}
+
+/* =========================================================
+   WELCOME MESSAGE
+========================================================= */
+
+.welcome-message {
+  width: 100%;
+
+  padding: 20px;
+
+  text-align: center;
+
+  animation: messageAppear 0.3s ease;
+}
+
+.welcome-message h2 {
+  font-size: 18px;
+
+  font-weight: 600;
+
+  color: #ffffff;
+
+  margin-bottom: 7px;
+}
+
+.welcome-message p {
+  color: #737d90;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+}
+
+/* =========================================================
    CHAT AREA
-========================================= */
+========================================================= */
 
 .chat-area {
   position: fixed;
@@ -554,9 +1135,9 @@ input {
   pointer-events: none;
 }
 
-/* =========================================
+/* =========================================================
    CHAT MESSAGES
-========================================= */
+========================================================= */
 
 .chat-messages {
   width: min(850px, 100%);
@@ -573,6 +1154,8 @@ input {
 
   gap: 10px;
 
+  padding: 3px;
+
   pointer-events: auto;
 
   scrollbar-width: thin;
@@ -588,6 +1171,7 @@ input {
   border-radius: 15px;
 
   backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 
   animation: messageAppear 0.25s ease;
 }
@@ -612,9 +1196,13 @@ input {
   line-height: 1.5;
 
   word-break: break-word;
+
+  white-space: pre-wrap;
 }
 
-/* USER MESSAGE */
+/* =========================================================
+   USER MESSAGE
+========================================================= */
 
 .chat-message.user {
   align-self: flex-end;
@@ -626,7 +1214,9 @@ input {
   text-align: right;
 }
 
-/* AI MESSAGE */
+/* =========================================================
+   AI MESSAGE
+========================================================= */
 
 .chat-message.assistant {
   align-self: flex-start;
@@ -636,9 +1226,47 @@ input {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* =========================================
+/* =========================================================
+   MESSAGE FILES
+========================================================= */
+
+.message-files {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  margin-bottom: 8px;
+}
+
+.message-file {
+  max-width: 260px;
+
+  padding: 6px 9px;
+
+  border-radius: 7px;
+
+  background: rgba(255, 255, 255, 0.06);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  color: #b7c0d0;
+
+  font-size: 11px;
+
+  text-align: left;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
    SELECTED FILES
-========================================= */
+========================================================= */
 
 .selected-files {
   width: min(850px, 100%);
@@ -674,6 +1302,8 @@ input {
   color: #cbd3e1;
 
   font-size: 12px;
+
+  animation: messageAppear 0.2s ease;
 }
 
 .file-preview span {
@@ -685,6 +1315,8 @@ input {
 }
 
 .file-preview button {
+  flex-shrink: 0;
+
   width: 22px;
   height: 22px;
 
@@ -702,17 +1334,21 @@ input {
   justify-content: center;
 
   cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
 }
 
 .file-preview button:hover {
-  color: white;
+  color: #ffffff;
 
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* =========================================
+/* =========================================================
    CHAT BAR
-========================================= */
+========================================================= */
 
 .chat-bar {
   width: min(850px, 100%);
@@ -740,13 +1376,14 @@ input {
     0 0 30px rgba(0, 229, 255, 0.04);
 
   backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
 
   pointer-events: auto;
 }
 
-/* =========================================
+/* =========================================================
    CHAT INPUT
-========================================= */
+========================================================= */
 
 .chat-input {
   flex: 1;
@@ -761,7 +1398,7 @@ input {
 
   background: transparent;
 
-  color: white;
+  color: #ffffff;
 
   font-size: 15px;
 
@@ -776,9 +1413,15 @@ input {
   color: #4e586b;
 }
 
-/* =========================================
+.chat-input:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+/* =========================================================
    CHAT ICON BUTTON
-========================================= */
+========================================================= */
 
 .chat-icon-button {
   flex-shrink: 0;
@@ -804,20 +1447,29 @@ input {
   transition:
     color 0.2s ease,
     background 0.2s ease,
-    transform 0.2s ease;
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
-.chat-icon-button:hover {
+.chat-icon-button:hover:not(:disabled) {
   color: #00e5ff;
 
   background: rgba(0, 229, 255, 0.08);
 }
 
-.chat-icon-button:active {
+.chat-icon-button:active:not(:disabled) {
   transform: scale(0.92);
 }
 
-/* ACTIVE MIC */
+.chat-icon-button:disabled {
+  opacity: 0.3;
+
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   ACTIVE MIC
+========================================================= */
 
 .chat-icon-button.mic-active {
   color: #00e5ff;
@@ -827,9 +1479,9 @@ input {
   animation: micChatPulse 1s infinite;
 }
 
-/* =========================================
+/* =========================================================
    SEND BUTTON
-========================================= */
+========================================================= */
 
 .send-button {
   flex-shrink: 0;
@@ -873,11 +1525,80 @@ input {
   opacity: 0.25;
 
   cursor: not-allowed;
+
+  box-shadow: none;
 }
 
-/* =========================================
+/* =========================================================
+   CONFIRMATION BUTTONS
+========================================================= */
+
+.confirmation-buttons {
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 14px;
+}
+
+.confirmation-buttons button {
+  border: none;
+
+  border-radius: 10px;
+
+  padding: 9px 18px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.confirmation-yes {
+  background: #22c55e;
+
+  color: #ffffff;
+}
+
+.confirmation-yes:hover {
+  transform: translateY(-1px);
+
+  filter: brightness(1.1);
+}
+
+.confirmation-no {
+  background: #ef4444;
+
+  color: #ffffff;
+}
+
+.confirmation-no:hover {
+  transform: translateY(-1px);
+
+  filter: brightness(1.1);
+}
+
+.confirmation-buttons button:active {
+  transform: scale(0.97);
+}
+
+/* =========================================================
+   LOADING SPINNER
+========================================================= */
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+/* =========================================================
    ANIMATIONS
-========================================= */
+========================================================= */
 
 @keyframes robotFloat {
   0%,
@@ -894,11 +1615,13 @@ input {
   0%,
   100% {
     transform: scale(0.9);
+
     opacity: 0.06;
   }
 
   50% {
     transform: scale(1.15);
+
     opacity: 0.12;
   }
 }
@@ -931,16 +1654,19 @@ input {
 @keyframes statusPulse {
   0% {
     transform: scale(1);
+
     opacity: 0.5;
   }
 
   50% {
     transform: scale(1.7);
+
     opacity: 1;
   }
 
   100% {
     transform: scale(1);
+
     opacity: 0.5;
   }
 }
@@ -948,7 +1674,8 @@ input {
 @keyframes micChatPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(0, 229, 255, 0);
+    box-shadow:
+      0 0 0 rgba(0, 229, 255, 0);
   }
 
   50% {
@@ -960,25 +1687,76 @@ input {
 @keyframes messageAppear {
   from {
     opacity: 0;
+
     transform: translateY(8px);
   }
 
   to {
     opacity: 1;
+
     transform: translateY(0);
   }
 }
 
-/* =========================================
+@keyframes panelAppear {
+  from {
+    opacity: 0;
+
+    transform: translateY(-8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 800px) {
+  .side-panel {
+    width: min(390px, calc(100vw - 30px));
+
+    right: 15px;
+  }
+
+  .chat-message {
+    max-width: 82%;
+  }
+
+  .chat-messages {
+    max-height: 210px;
+  }
+}
+
+/* =========================================================
    MOBILE
-========================================= */
+========================================================= */
 
 @media (max-width: 600px) {
-
   .header {
     height: 62px;
 
     padding: 0 14px;
+  }
+
+  .logo {
+    font-size: 14px;
+
+    letter-spacing: 1.5px;
   }
 
   .main {
@@ -991,6 +1769,8 @@ input {
     height: calc(100vh - 62px);
 
     width: 250px;
+
+    padding: 20px;
   }
 
   .robot-container {
@@ -1002,11 +1782,15 @@ input {
 
   .robot-head {
     width: 165px;
+
     height: 180px;
   }
 
   .robot-face {
-    inset: 30px 18px 22px;
+    inset:
+      30px
+      18px
+      22px;
   }
 
   .eyes {
@@ -1017,6 +1801,7 @@ input {
 
   .eye {
     width: 25px;
+
     height: 15px;
   }
 
@@ -1031,6 +1816,61 @@ input {
 
     font-size: 13px;
   }
+
+  .transcript {
+    width: 90%;
+
+    padding:
+      12px
+      16px;
+  }
+
+  .transcript p {
+    font-size: 14px;
+  }
+
+  /* SIDE PANEL */
+
+  .side-panel {
+    top: 72px;
+
+    right: 10px;
+
+    width: calc(100vw - 20px);
+
+    max-height: calc(100vh - 82px);
+
+    border-radius: 15px;
+  }
+
+  .side-panel-header {
+    min-height: 56px;
+
+    padding:
+      0
+      14px;
+  }
+
+  .side-panel-header h2 {
+    font-size: 15px;
+  }
+
+  .conversation-list,
+  .settings-panel {
+    max-height: calc(100vh - 150px);
+  }
+
+  /* ERROR */
+
+  .error-message {
+    top: 72px;
+
+    width: calc(100vw - 20px);
+
+    font-size: 12px;
+  }
+
+  /* CHAT */
 
   .chat-area {
     padding:
@@ -1056,41 +1896,95 @@ input {
   .chat-icon-button,
   .send-button {
     width: 40px;
+
     height: 40px;
+
+    border-radius: 11px;
   }
 
   .chat-message {
     max-width: 88%;
+
+    padding:
+      10px
+      13px;
   }
 
   .chat-messages {
     max-height: 180px;
   }
 
-  .transcript {
-    width: 90%;
-
-    padding: 12px 16px;
+  .chat-message p {
+    font-size: 13px;
   }
 
-  .transcript p {
-    font-size: 14px;
+  .selected-files {
+    gap: 5px;
+  }
+
+  .file-preview {
+    max-width: 190px;
+  }
+
+  .welcome-message {
+    padding:
+      12px
+      10px;
+  }
+
+  .welcome-message h2 {
+    font-size: 16px;
+  }
+
+  .welcome-message p {
+    font-size: 12px;
+  }
+
+  .confirmation-buttons {
+    gap: 7px;
+  }
+
+  .confirmation-buttons button {
+    padding:
+      8px
+      14px;
+
+    font-size: 12px;
   }
 }
 
-/* =========================================
+/* =========================================================
    SMALL PHONES
-========================================= */
+========================================================= */
 
 @media (max-width: 380px) {
+  .header {
+    padding: 0 10px;
+  }
+
+  .logo {
+    font-size: 12px;
+
+    letter-spacing: 1px;
+  }
+
+  .icon-button {
+    width: 38px;
+
+    height: 38px;
+  }
 
   .robot-head {
     width: 145px;
+
     height: 160px;
   }
 
   .robot-face {
-    inset: 27px 16px 20px;
+    inset:
+      27px
+      16px
+      20px;
   }
 
   .eyes {
@@ -1101,11 +1995,13 @@ input {
 
   .eye {
     width: 22px;
+
     height: 13px;
   }
 
   .mouth {
     width: 52px;
+
     height: 21px;
 
     margin-top: 25px;
@@ -1114,50 +2010,43 @@ input {
   .chat-icon-button,
   .send-button {
     width: 37px;
+
     height: 37px;
+  }
+
+  .chat-input {
+    font-size: 13px;
+
+    padding:
+      0
+      5px;
+  }
+
+  .chat-bar {
+    gap: 4px;
+  }
+
+  .side-panel {
+    right: 7px;
+
+    width: calc(100vw - 14px);
   }
 }
 
 /* =========================================================
-   CONFIRMATION BUTTONS
+   REDUCED MOTION
 ========================================================= */
 
-.confirmation-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
 
-.confirmation-buttons button {
-  border: none;
-  border-radius: 10px;
-  padding: 9px 18px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+    animation-iteration-count: 1 !important;
 
-.confirmation-yes {
-  background: #22c55e;
-  color: #ffffff;
-}
+    transition-duration: 0.01ms !important;
 
-.confirmation-yes:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
-}
-
-.confirmation-no {
-  background: #ef4444;
-  color: #ffffff;
-}
-
-.confirmation-no:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
-}
-
-.confirmation-buttons button:active {
-  transform: scale(0.97);
+    scroll-behavior: auto !important;
+  }
 }
