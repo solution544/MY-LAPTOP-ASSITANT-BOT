@@ -1,3 +1,4 @@
+
 """
 ComputerControlService (spec section 11).
 
@@ -33,6 +34,7 @@ def _pyautogui():
 class MoveMouseTool(Tool):
     name = "computer.move_mouse"
     description = "Move the mouse cursor to absolute screen coordinates."
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -41,10 +43,12 @@ class MoveMouseTool(Tool):
         },
         "required": ["x", "y"],
     }
+
     permission_level = PermissionLevel.LOW_RISK
 
     async def execute(self, **kwargs) -> ToolResult:
-        x, y = kwargs["x"], kwargs["y"]
+        x = kwargs["x"]
+        y = kwargs["y"]
 
         _pyautogui().moveTo(
             x,
@@ -63,7 +67,11 @@ class MoveMouseTool(Tool):
 
 class ClickTool(Tool):
     name = "computer.click"
-    description = "Click the mouse at coordinates (or current position if omitted)."
+    description = (
+        "Click the mouse at coordinates "
+        "(or current position if omitted)."
+    )
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -71,6 +79,7 @@ class ClickTool(Tool):
             "y": {"type": "integer"},
         },
     }
+
     permission_level = PermissionLevel.SENSITIVE
 
     def confirmation_description(self, **kwargs) -> str:
@@ -105,6 +114,7 @@ class ClickTool(Tool):
 class DoubleClickTool(Tool):
     name = "computer.double_click"
     description = "Double-click at coordinates."
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -113,6 +123,7 @@ class DoubleClickTool(Tool):
         },
         "required": ["x", "y"],
     }
+
     permission_level = PermissionLevel.SENSITIVE
 
     def confirmation_description(self, **kwargs) -> str:
@@ -142,6 +153,7 @@ class DoubleClickTool(Tool):
 class RightClickTool(Tool):
     name = "computer.right_click"
     description = "Right-click at coordinates."
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -150,6 +162,7 @@ class RightClickTool(Tool):
         },
         "required": ["x", "y"],
     }
+
     permission_level = PermissionLevel.SENSITIVE
 
     def confirmation_description(self, **kwargs) -> str:
@@ -179,6 +192,7 @@ class RightClickTool(Tool):
 class DragTool(Tool):
     name = "computer.drag"
     description = "Drag the mouse from a start point to an end point."
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -194,6 +208,7 @@ class DragTool(Tool):
             "end_y",
         ],
     }
+
     permission_level = PermissionLevel.SENSITIVE
 
     def confirmation_description(self, **kwargs) -> str:
@@ -246,6 +261,7 @@ class DragTool(Tool):
 class ScrollTool(Tool):
     name = "computer.scroll"
     description = "Scroll the mouse wheel. Positive = up, negative = down."
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -253,6 +269,7 @@ class ScrollTool(Tool):
         },
         "required": ["amount"],
     }
+
     permission_level = PermissionLevel.LOW_RISK
 
     async def execute(self, **kwargs) -> ToolResult:
@@ -275,6 +292,7 @@ class ScrollTool(Tool):
 class TypeTextTool(Tool):
     name = "computer.type_text"
     description = "Type text at the current cursor/focus position."
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -282,6 +300,7 @@ class TypeTextTool(Tool):
         },
         "required": ["text"],
     }
+
     permission_level = PermissionLevel.SENSITIVE
 
     def confirmation_description(self, **kwargs) -> str:
@@ -298,22 +317,51 @@ class TypeTextTool(Tool):
     async def execute(self, **kwargs) -> ToolResult:
         text = kwargs["text"]
 
-        _pyautogui().typewrite(
-            text,
-            interval=0.01,
-        )
+        if not isinstance(text, str):
+            return ToolResult(
+                success=False,
+                error="Text must be a string.",
+                error_code="INVALID_TEXT",
+            )
 
-        return ToolResult(
-            success=True,
-            data={
-                "characters_typed": len(text),
-            },
-        )
+        if not text:
+            return ToolResult(
+                success=False,
+                error="Text cannot be empty.",
+                error_code="EMPTY_TEXT",
+            )
+
+        try:
+            pg = _pyautogui()
+
+            pg.typewrite(
+                text,
+                interval=0.01,
+            )
+
+            return ToolResult(
+                success=True,
+                data={
+                    "characters_typed": len(text),
+                    "text": text,
+                },
+            )
+
+        except Exception as exc:
+            return ToolResult(
+                success=False,
+                error=f"Could not type text: {exc}",
+                error_code="TYPE_TEXT_FAILED",
+            )
 
 
 class PressKeyTool(Tool):
     name = "computer.press_key"
-    description = "Press a single key (e.g. 'enter', 'esc', 'tab', 'f5')."
+    description = (
+        "Press a single key "
+        "(e.g. 'enter', 'esc', 'tab', 'f5')."
+    )
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -321,6 +369,7 @@ class PressKeyTool(Tool):
         },
         "required": ["key"],
     }
+
     permission_level = PermissionLevel.LOW_RISK
 
     async def execute(self, **kwargs) -> ToolResult:
@@ -338,7 +387,11 @@ class PressKeyTool(Tool):
 
 class HotkeyTool(Tool):
     name = "computer.hotkey"
-    description = "Press a key combination, e.g. ['ctrl', 'c']."
+    description = (
+        "Press a key combination, "
+        "e.g. ['ctrl', 'c']."
+    )
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -351,6 +404,7 @@ class HotkeyTool(Tool):
         },
         "required": ["keys"],
     }
+
     permission_level = PermissionLevel.LOW_RISK
 
     async def execute(self, **kwargs) -> ToolResult:
@@ -375,10 +429,12 @@ class HotkeyTool(Tool):
 class GetScreenSizeTool(Tool):
     name = "computer.get_screen_size"
     description = "Get the primary screen's resolution."
+
     input_schema = {
         "type": "object",
         "properties": {},
     }
+
     permission_level = PermissionLevel.SAFE
 
     async def execute(self, **kwargs) -> ToolResult:
@@ -396,23 +452,37 @@ class GetScreenSizeTool(Tool):
 class GetActiveWindowTool(Tool):
     name = "computer.get_active_window"
     description = "Get the title of the currently focused window."
+
     input_schema = {
         "type": "object",
         "properties": {},
     }
+
     permission_level = PermissionLevel.LOW_RISK
 
     async def execute(self, **kwargs) -> ToolResult:
         import pygetwindow as gw
 
-        win = gw.getActiveWindow()
+        try:
+            win = gw.getActiveWindow()
 
-        return ToolResult(
-            success=True,
-            data={
-                "title": win.title if win else None,
-            },
-        )
+            return ToolResult(
+                success=True,
+                data={
+                    "title": (
+                        win.title
+                        if win
+                        else None
+                    ),
+                },
+            )
+
+        except Exception as exc:
+            return ToolResult(
+                success=False,
+                error=f"Could not get active window: {exc}",
+                error_code="ACTIVE_WINDOW_FAILED",
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -462,10 +532,12 @@ _APP_COMMANDS = {
 
 class OpenApplicationTool(Tool):
     name = "computer.open_application"
+
     description = (
         "Open a desktop application by name and "
         "bring its window to the foreground."
     )
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -475,6 +547,7 @@ class OpenApplicationTool(Tool):
         },
         "required": ["name"],
     }
+
     permission_level = PermissionLevel.SAFE
 
     async def execute(self, **kwargs) -> ToolResult:
@@ -489,29 +562,33 @@ class OpenApplicationTool(Tool):
                 error_code="INVALID_APPLICATION_NAME",
             )
 
-        command = _APP_COMMANDS.get(
-            name.lower(),
-            name,
-        )
+        command = _APP_COMMANDS.get(name.lower()) or name
 
         try:
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
             # Get windows before launching
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
+
             existing_windows = set()
 
             try:
                 for window in gw.getAllWindows():
-                    title = (window.title or "").strip()
+                    title = (
+                        window.title or ""
+                    ).strip()
 
                     if title:
-                        existing_windows.add(title.lower())
+                        existing_windows.add(
+                            title.lower()
+                        )
+
             except Exception:
                 pass
 
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
             # Launch application
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
+
             if platform.system() == "Windows":
                 subprocess.Popen(
                     [
@@ -524,28 +601,34 @@ class OpenApplicationTool(Tool):
                     shell=False,
                 )
             else:
-                subprocess.Popen([command])
+                subprocess.Popen(
+                    [command]
+                )
 
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
             # Wait for application window
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
+
             time.sleep(1.5)
 
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
             # Find application window
-            # ----------------------------------------------------------
-            target_name = name.lower()
+            # ------------------------------------------------------
 
             try:
                 windows = gw.getAllWindows()
             except Exception:
                 windows = []
 
+            target_name = name.lower()
             target_window = None
 
             # First: newly created matching window
             for window in windows:
-                title = (window.title or "").strip()
+                title = (
+                    window.title or ""
+                ).strip()
+
                 title_lower = title.lower()
 
                 if not title:
@@ -562,7 +645,10 @@ class OpenApplicationTool(Tool):
             # Second: existing matching window
             if target_window is None:
                 for window in windows:
-                    title = (window.title or "").strip()
+                    title = (
+                        window.title or ""
+                    ).strip()
+
                     title_lower = title.lower()
 
                     if not title:
@@ -572,10 +658,12 @@ class OpenApplicationTool(Tool):
                         target_window = window
                         break
 
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
             # Aliases
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
+
             if target_window is None:
+
                 aliases = {
                     "notepad": [
                         "notepad",
@@ -619,7 +707,9 @@ class OpenApplicationTool(Tool):
                 )
 
                 for window in windows:
-                    title = (window.title or "").strip().lower()
+                    title = (
+                        window.title or ""
+                    ).strip().lower()
 
                     if not title:
                         continue
@@ -631,16 +721,19 @@ class OpenApplicationTool(Tool):
                         target_window = window
                         break
 
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
             # Force foreground focus using Windows API
-            # ----------------------------------------------------------
+            # ------------------------------------------------------
+
             focused = False
 
             if target_window is not None:
+
                 try:
                     hwnd = target_window._hWnd
 
                     if platform.system() == "Windows":
+
                         import ctypes
 
                         user32 = ctypes.windll.user32
@@ -679,7 +772,8 @@ class OpenApplicationTool(Tool):
                         if (
                             current_thread
                             and target_thread
-                            and current_thread != target_thread
+                            and current_thread
+                            != target_thread
                         ):
                             user32.AttachThreadInput(
                                 current_thread,
@@ -688,17 +782,24 @@ class OpenApplicationTool(Tool):
                             )
 
                         # Bring window to foreground
-                        user32.BringWindowToTop(hwnd)
+                        user32.BringWindowToTop(
+                            hwnd
+                        )
 
-                        user32.SetForegroundWindow(hwnd)
+                        user32.SetForegroundWindow(
+                            hwnd
+                        )
 
-                        user32.SetFocus(hwnd)
+                        user32.SetFocus(
+                            hwnd
+                        )
 
                         # Detach threads
                         if (
                             current_thread
                             and target_thread
-                            and current_thread != target_thread
+                            and current_thread
+                            != target_thread
                         ):
                             user32.AttachThreadInput(
                                 current_thread,
@@ -719,7 +820,9 @@ class OpenApplicationTool(Tool):
 
                     else:
                         target_window.activate()
+
                         time.sleep(0.5)
+
                         focused = True
 
                 except Exception as focus_error:
@@ -756,7 +859,12 @@ class OpenApplicationTool(Tool):
 
 class CloseApplicationTool(Tool):
     name = "computer.close_application"
-    description = "Close a running application by process name (e.g. 'chrome.exe')."
+
+    description = (
+        "Close a running application by process name "
+        "(e.g. 'chrome.exe')."
+    )
+
     input_schema = {
         "type": "object",
         "properties": {
@@ -766,6 +874,7 @@ class CloseApplicationTool(Tool):
         },
         "required": ["name"],
     }
+
     permission_level = PermissionLevel.SENSITIVE
 
     def confirmation_description(self, **kwargs) -> str:
@@ -782,22 +891,27 @@ class CloseApplicationTool(Tool):
         closed = 0
 
         for proc in psutil.process_iter(["name"]):
+
             proc_name = (
                 proc.info.get("name")
                 or ""
             ).lower()
 
             if target in proc_name:
+
                 try:
                     proc.terminate()
                     closed += 1
+
                 except psutil.NoSuchProcess:
                     pass
 
         if closed == 0:
             return ToolResult(
                 success=False,
-                error=f"No running process matched '{name}'",
+                error=(
+                    f"No running process matched '{name}'"
+                ),
                 error_code="NOT_RUNNING",
             )
 
@@ -812,10 +926,12 @@ class CloseApplicationTool(Tool):
 class ListRunningApplicationsTool(Tool):
     name = "computer.list_running_applications"
     description = "List currently running application processes."
+
     input_schema = {
         "type": "object",
         "properties": {},
     }
+
     permission_level = PermissionLevel.LOW_RISK
 
     async def execute(self, **kwargs) -> ToolResult:

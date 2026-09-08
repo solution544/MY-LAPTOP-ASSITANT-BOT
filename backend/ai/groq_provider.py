@@ -156,6 +156,12 @@ class GroqProvider(AIProvider):
         choice = response.choices[0]
         message = choice.message
 
+        print("\n========== GROQ TOOL DEBUG ==========")
+        print("MODEL:", self.model)
+        print("CONTENT:", repr(message.content))
+        print("TOOL CALLS:", message.tool_calls)
+        print("=====================================\n")
+
         tool_calls = []
 
         if message.tool_calls:
