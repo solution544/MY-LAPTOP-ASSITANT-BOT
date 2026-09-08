@@ -12,6 +12,7 @@ import json
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from backend.api import (
     chat,
@@ -43,16 +44,16 @@ from backend.scheduler.scheduler import (
 from backend.tools.register_all import register_all_tools
 
 
-# ---------------------------------------------------------
+# =========================================================
 # SETTINGS
-# ---------------------------------------------------------
+# =========================================================
 
 settings = get_settings()
 
 
-# ---------------------------------------------------------
+# =========================================================
 # FASTAPI APP
-# ---------------------------------------------------------
+# =========================================================
 
 app = FastAPI(
     title="Solution AI",
@@ -61,9 +62,9 @@ app = FastAPI(
 )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # CORS
-# ---------------------------------------------------------
+# =========================================================
 
 allowed_origins = [
     "http://localhost:5173",
@@ -88,9 +89,9 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # API ROUTERS
-# ---------------------------------------------------------
+# =========================================================
 
 app.include_router(chat.router)
 app.include_router(conversations.router)
@@ -106,9 +107,9 @@ app.include_router(tasks.scheduled_router)
 app.include_router(voice.router)
 
 
-# ---------------------------------------------------------
+# =========================================================
 # ROOT ENDPOINT
-# ---------------------------------------------------------
+# =========================================================
 
 @app.get("/")
 def root():
@@ -119,9 +120,9 @@ def root():
     }
 
 
-# ---------------------------------------------------------
+# =========================================================
 # STARTUP
-# ---------------------------------------------------------
+# =========================================================
 
 @app.on_event("startup")
 async def on_startup():
@@ -143,16 +144,39 @@ async def on_startup():
     # 2. INITIALIZE / VERIFY DATABASE
     # -----------------------------------------------------
     #
-    # This is important for Render's fresh PostgreSQL
-    # database. It creates any missing tables, including
-    # scheduled_tasks, before the scheduler tries to load
-    # scheduled jobs.
+    # PostgreSQL:
+    #   - Enable pgvector
+    #   - Create missing tables
     #
-    # Later, when the project is more mature, use Alembic
-    # migrations instead of create_all() on every startup.
+    # SQLite:
+    #   - Skip PostgreSQL-specific pgvector command
+    #   - Create missing tables
     #
+    # Later, use Alembic migrations instead of create_all()
+    # for production schema management.
+    # -----------------------------------------------------
 
     try:
+        database_type = engine.dialect.name
+
+        if database_type == "postgresql":
+            with engine.begin() as conn:
+                conn.execute(
+                    text("CREATE EXTENSION IF NOT EXISTS vector")
+                )
+
+            logger.info(
+                "PostgreSQL detected. "
+                "pgvector extension verified successfully."
+            )
+
+        else:
+            logger.info(
+                f"{database_type} database detected. "
+                "Skipping PostgreSQL pgvector setup."
+            )
+
+        # Create any missing tables.
         Base.metadata.create_all(bind=engine)
 
         logger.info(
@@ -172,7 +196,9 @@ async def on_startup():
     try:
         scheduler.start()
 
-        logger.info("Scheduler started successfully.")
+        logger.info(
+            "Scheduler started successfully."
+        )
 
     except Exception as exc:
         logger.exception(
@@ -198,7 +224,7 @@ async def on_startup():
         raise
 
     # -----------------------------------------------------
-    # 5. MCP SERVERS
+    # 5. PREPARE MCP SERVERS
     # -----------------------------------------------------
 
     try:
@@ -209,8 +235,8 @@ async def on_startup():
 
     except (json.JSONDecodeError, TypeError) as exc:
         logger.error(
-            "MCP_SERVERS is not valid JSON, "
-            f"skipping MCP startup: {exc}"
+            "MCP_SERVERS is not valid JSON. "
+            f"Skipping MCP startup: {exc}"
         )
 
         server_configs = []
@@ -234,29 +260,44 @@ async def on_startup():
             raise
 
     else:
-        logger.info("No MCP servers configured.")
+        logger.info(
+            "No MCP servers configured."
+        )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # SHUTDOWN
-# ---------------------------------------------------------
+# =========================================================
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    # Stop scheduler
+
+    # -----------------------------------------------------
+    # 1. STOP SCHEDULER
+    # -----------------------------------------------------
+
     try:
         scheduler.shutdown(wait=False)
-        logger.info("Scheduler stopped successfully.")
+
+        logger.info(
+            "Scheduler stopped successfully."
+        )
 
     except Exception as exc:
         logger.exception(
             f"Scheduler shutdown failed: {exc}"
         )
 
-    # Shutdown MCP manager
+    # -----------------------------------------------------
+    # 2. SHUTDOWN MCP MANAGER
+    # -----------------------------------------------------
+
     try:
         await mcp_manager.shutdown()
-        logger.info("MCP manager shut down successfully.")
+
+        logger.info(
+            "MCP manager shut down successfully."
+        )
 
     except Exception as exc:
         logger.exception(
