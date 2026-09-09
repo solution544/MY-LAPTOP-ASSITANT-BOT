@@ -11,6 +11,7 @@ import {
   Plus,
   RefreshCw,
 } from "lucide-react";
+
 import useVoice from "./hooks/useVoice";
 import "./App.css";
 
@@ -18,38 +19,56 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 function App() {
+  // ==========================================================
+  // STATE
+  // ==========================================================
+
   const [menuOpen, setMenuOpen] = useState(false);
+
   const [message, setMessage] = useState("");
+
   const [messages, setMessages] = useState([]);
+
   const [selectedFiles, setSelectedFiles] = useState([]);
+
   const [conversationId, setConversationId] = useState(null);
 
   const [conversations, setConversations] = useState([]);
-  const [activePanel, setActivePanel] = useState("chat");
 
-  const [loadingConversations, setLoadingConversations] = useState(false);
-  const [loadingConversation, setLoadingConversation] = useState(false);
+  const [activePanel, setActivePanel] = useState(null);
+
+  const [loadingConversations, setLoadingConversations] =
+    useState(false);
+
+  const [loadingConversation, setLoadingConversation] =
+    useState(false);
+
   const [sending, setSending] = useState(false);
+
   const [error, setError] = useState("");
 
   const fileInputRef = useRef(null);
-  const textareaRef = useRef(null);
+
+  // ==========================================================
+  // VOICE
+  // ==========================================================
 
   const {
     isListening,
+    isProcessing,
     transcript,
-    startListening,
-    stopListening,
-    supported: voiceSupported,
+    reply,
+    toggleListening,
   } = useVoice();
 
-  // --------------------------------------------------
-  // LOAD CONVERSATIONS
-  // --------------------------------------------------
+  // ==========================================================
+  // LOAD ALL CONVERSATIONS
+  // ==========================================================
 
   const loadConversations = async () => {
     try {
       setLoadingConversations(true);
+      setError("");
 
       const response = await fetch(
         `${API_BASE_URL}/api/conversations`
@@ -65,17 +84,23 @@ function App() {
 
       setConversations(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to load conversations:", err);
+      console.error("Conversation loading error:", err);
+
+      setError(
+        "Unable to load conversations. Check that the backend is running."
+      );
+
+      setConversations([]);
     } finally {
       setLoadingConversations(false);
     }
   };
 
-  // --------------------------------------------------
-  // LOAD SINGLE CONVERSATION
-  // --------------------------------------------------
+  // ==========================================================
+  // LOAD A SINGLE CONVERSATION
+  // ==========================================================
 
-  const loadConversation = async (id) => {
+  const openConversation = async (id) => {
     if (!id) return;
 
     try {
@@ -94,151 +119,139 @@ function App() {
 
       const data = await response.json();
 
-      setConversationId(data.id);
+      setConversationId(data.id || id);
+
+      const loadedMessages = Array.isArray(data.messages)
+        ? data.messages
+        : [];
 
       setMessages(
-        Array.isArray(data.messages)
-          ? data.messages.map((msg) => ({
-              role: msg.role,
-              content: msg.content || "",
-            }))
-          : []
+        loadedMessages
+          .filter(
+            (msg) =>
+              msg.role === "user" ||
+              msg.role === "assistant"
+          )
+          .map((msg) => ({
+            role: msg.role,
+            content: msg.content || "",
+          }))
       );
 
-      setActivePanel("chat");
+      setSelectedFiles([]);
+      setMessage("");
+
+      // Close everything after opening a conversation
+      setActivePanel(null);
       setMenuOpen(false);
     } catch (err) {
-      console.error("Failed to load conversation:", err);
-      setError(err.message);
+      console.error("Open conversation error:", err);
+
+      setError(
+        "Unable to open this conversation."
+      );
     } finally {
       setLoadingConversation(false);
     }
   };
 
-  // --------------------------------------------------
+  // ==========================================================
   // NEW CONVERSATION
-  // --------------------------------------------------
+  // ==========================================================
 
-  const startNewConversation = () => {
+  const handleNewConversation = () => {
     setConversationId(null);
     setMessages([]);
     setMessage("");
     setSelectedFiles([]);
-    setError("");
-    setActivePanel("chat");
+    setActivePanel(null);
     setMenuOpen(false);
+    setError("");
 
-    setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 50);
+    // Clear file input as well
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
-  // --------------------------------------------------
-  // INITIAL LOAD
-  // --------------------------------------------------
+  // ==========================================================
+  // CONVERSATIONS PANEL
+  // ==========================================================
+
+  const handleConversations = async () => {
+    setMenuOpen(false);
+    setActivePanel("conversations");
+
+    await loadConversations();
+  };
+
+  // ==========================================================
+  // HISTORY PANEL
+  // ==========================================================
+
+  const handleHistory = async () => {
+    setMenuOpen(false);
+    setActivePanel("history");
+
+    await loadConversations();
+  };
+
+  // ==========================================================
+  // SETTINGS PANEL
+  // ==========================================================
+
+  const handleSettings = () => {
+    setMenuOpen(false);
+    setActivePanel("settings");
+    setError("");
+  };
+
+  // ==========================================================
+  // CLOSE PANEL
+  // ==========================================================
+
+  const closePanel = () => {
+    setActivePanel(null);
+  };
+
+  // ==========================================================
+  // SPACEBAR → VOICE
+  // ==========================================================
 
   useEffect(() => {
-    loadConversations();
-  }, []);
-
-  // --------------------------------------------------
-  // VOICE TRANSCRIPT
-  // --------------------------------------------------
-
-  useEffect(() => {
-    if (transcript) {
-      setMessage((prev) => {
-        const separator = prev.trim() ? " " : "";
-        return `${prev}${separator}${transcript}`;
-      });
-    }
-  }, [transcript]);
-
-  // --------------------------------------------------
-  // SPACEBAR VOICE SHORTCUT
-  // --------------------------------------------------
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
+    const handleVoiceShortcut = (event) => {
       const target = event.target;
 
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
+      const isTyping =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
 
       if (
         event.code === "Space" &&
-        !event.repeat &&
-        voiceSupported
+        !isTyping
       ) {
         event.preventDefault();
-        startListening();
+        toggleListening();
       }
     };
 
-    const handleKeyUp = (event) => {
-      if (
-        event.code === "Space" &&
-        voiceSupported
-      ) {
-        event.preventDefault();
-        stopListening();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener(
+      "keydown",
+      handleVoiceShortcut
+    );
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener(
+        "keydown",
+        handleVoiceShortcut
+      );
     };
-  }, [
-    voiceSupported,
-    startListening,
-    stopListening,
-  ]);
+  }, [toggleListening]);
 
-  // --------------------------------------------------
-  // FILE SELECTION
-  // --------------------------------------------------
-
-  const handleFileChange = (event) => {
-    const files = Array.from(event.target.files || []);
-
-    if (!files.length) return;
-
-    setSelectedFiles((prev) => {
-      const existingNames = new Set(
-        prev.map((file) => `${file.name}-${file.size}`)
-      );
-
-      const newFiles = files.filter(
-        (file) =>
-          !existingNames.has(
-            `${file.name}-${file.size}`
-          )
-      );
-
-      return [...prev, ...newFiles];
-    });
-
-    event.target.value = "";
-  };
-
-  const removeSelectedFile = (index) => {
-    setSelectedFiles((prev) =>
-      prev.filter((_, i) => i !== index)
-    );
-  };
-
-  // --------------------------------------------------
-  // SEND MESSAGE
-  // --------------------------------------------------
+  // ==========================================================
+  // SEND MESSAGE + FILES
+  // ==========================================================
 
   const handleSend = async () => {
     const trimmedMessage = message.trim();
@@ -250,11 +263,16 @@ function App() {
       return;
     }
 
-    if (sending) return;
+    if (sending) {
+      return;
+    }
 
     const filesToSend = [...selectedFiles];
 
-    // Immediately display user's message
+    // ========================================================
+    // SHOW USER MESSAGE IMMEDIATELY
+    // ========================================================
+
     setMessages((prev) => [
       ...prev,
       {
@@ -274,6 +292,10 @@ function App() {
     setError("");
 
     try {
+      // ======================================================
+      // FORM DATA
+      // ======================================================
+
       const formData = new FormData();
 
       formData.append(
@@ -288,7 +310,11 @@ function App() {
         );
       }
 
-      // Backend currently accepts one file.
+      /*
+       * Backend currently accepts one `file`.
+       *
+       * Therefore send the first selected file.
+       */
       if (filesToSend.length > 0) {
         formData.append(
           "file",
@@ -296,9 +322,9 @@ function App() {
         );
       }
 
-      console.log(
-        "Sending message to Solution AI..."
-      );
+      // ======================================================
+      // API REQUEST
+      // ======================================================
 
       const response = await fetch(
         `${API_BASE_URL}/api/chat`,
@@ -308,82 +334,59 @@ function App() {
         }
       );
 
-      console.log(
-        "Solution AI API status:",
-        response.status
-      );
-
       if (!response.ok) {
         let errorMessage =
-          `Backend returned HTTP ${response.status}.`;
+          "Failed to send message.";
 
         try {
           const errorData =
             await response.json();
 
-          console.error(
-            "Solution AI API error:",
-            errorData
-          );
-
           if (errorData?.detail) {
             errorMessage =
-              typeof errorData.detail ===
-              "string"
+              typeof errorData.detail === "string"
                 ? errorData.detail
                 : JSON.stringify(
                     errorData.detail
                   );
           }
         } catch {
-          // Ignore JSON parsing failure
+          const text =
+            await response.text();
+
+          if (text) {
+            errorMessage = text;
+          }
         }
 
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      console.log(
-        "Solution AI API response:",
-        data
-      );
+      // ======================================================
+      // STORE CONVERSATION ID
+      // ======================================================
 
-      console.log(
-        "Solution AI content:",
-        data?.content
-      );
-
-      // Save conversation ID
-      if (data?.conversation_id) {
+      if (data.conversation_id) {
         setConversationId(
           data.conversation_id
         );
       }
 
-      const assistantContent =
-        typeof data?.content === "string"
-          ? data.content.trim()
-          : "";
+      // ======================================================
+      // ASSISTANT RESPONSE
+      // ======================================================
 
-      if (!assistantContent) {
-        console.error(
-          "Backend returned no assistant content:",
-          data
-        );
-
-        throw new Error(
-          "The backend responded successfully, but no AI message was returned."
-        );
-      }
-
-      // THIS IS THE IMPORTANT PART:
-      // Add the actual backend response to the UI.
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: assistantContent,
+
+          content:
+            data.content ||
+            "I completed the request.",
 
           confirmation_required:
             Boolean(
@@ -400,30 +403,33 @@ function App() {
             data.description || null,
 
           permission_level:
-            data.permission_level || null,
+            data.permission_level ||
+            null,
         },
       ]);
 
-      // Refresh sidebar
+      // ======================================================
+      // REFRESH CONVERSATIONS
+      // ======================================================
+
       await loadConversations();
     } catch (err) {
-      console.error(
-        "Solution AI chat error:",
-        err
+      console.error("Chat error:", err);
+
+      setError(
+        err.message ||
+          "Something went wrong while contacting Solution AI."
       );
-
-      const errorMessage =
-        err?.message ||
-        "Something went wrong while contacting Solution AI.";
-
-      setError(errorMessage);
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content:
-            `Sorry, I couldn't process your request.\n\n${errorMessage}`,
+            `Sorry, I couldn't process your request.\n\n${
+              err.message ||
+              "Unknown error"
+            }`,
         },
       ]);
     } finally {
@@ -431,44 +437,35 @@ function App() {
     }
   };
 
-  // --------------------------------------------------
-  // ENTER TO SEND
-  // --------------------------------------------------
-
-  const handleTextareaKeyDown = (event) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
-      event.preventDefault();
-      handleSend();
-    }
-  };
-
-  // --------------------------------------------------
+  // ==========================================================
   // CONFIRMATION
-  // --------------------------------------------------
+  // ==========================================================
 
   const handleConfirmation = async (
     confirmationId,
     approved
   ) => {
-    if (!confirmationId) return;
+    if (!confirmationId) {
+      return;
+    }
 
     try {
-      setSending(true);
       setError("");
 
       const response = await fetch(
         `${API_BASE_URL}/api/chat/confirm`,
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
             confirmation_id:
               confirmationId,
+
             approved,
           }),
         }
@@ -476,7 +473,7 @@ function App() {
 
       if (!response.ok) {
         let errorMessage =
-          `Confirmation failed (${response.status}).`;
+          "Confirmation request failed.";
 
         try {
           const errorData =
@@ -484,736 +481,845 @@ function App() {
 
           if (errorData?.detail) {
             errorMessage =
-              typeof errorData.detail ===
-              "string"
+              typeof errorData.detail === "string"
                 ? errorData.detail
                 : JSON.stringify(
                     errorData.detail
                   );
           }
         } catch {
-          // Ignore
+          const text =
+            await response.text();
+
+          if (text) {
+            errorMessage = text;
+          }
         }
 
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      console.log(
-        "Confirmation response:",
-        data
+      // Remove confirmation buttons
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.confirmation_id ===
+          confirmationId
+            ? {
+                ...msg,
+                confirmation_required:
+                  false,
+              }
+            : msg
+        )
       );
 
-      const assistantContent =
-        typeof data?.content === "string"
-          ? data.content.trim()
-          : "";
-
-      if (assistantContent) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: assistantContent,
-          },
-        ]);
-      }
-
-      if (data?.conversation_id) {
-        setConversationId(
-          data.conversation_id
-        );
-      }
+      // Add result message
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            data.content ||
+            (approved
+              ? "Confirmed. The action has been completed."
+              : "Okay. I cancelled the action."),
+        },
+      ]);
 
       await loadConversations();
     } catch (err) {
       console.error(
-        "Confirmation error:",
+        "Chat confirmation error:",
         err
       );
 
       setError(
-        err?.message ||
-          "Failed to process confirmation."
+        err.message ||
+          "I couldn't process that confirmation."
       );
-    } finally {
-      setSending(false);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "I couldn't process that confirmation.",
+        },
+      ]);
     }
   };
 
-  // --------------------------------------------------
-  // MENU
-  // --------------------------------------------------
+  // ==========================================================
+  // ENTER → SEND
+  // ==========================================================
 
-  const openPanel = (panel) => {
-    setActivePanel(panel);
-    setMenuOpen(false);
+  const handleKeyDown = (event) => {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
+      event.preventDefault();
+
+      if (!sending) {
+        handleSend();
+      }
+    }
   };
 
-  // --------------------------------------------------
+  // ==========================================================
+  // FILE SELECTION
+  // ==========================================================
+
+  const handleFileChange = (event) => {
+    const files = Array.from(
+      event.target.files || []
+    );
+
+    if (files.length === 0) {
+      return;
+    }
+
+    setSelectedFiles((prev) => {
+      const existingKeys = new Set(
+        prev.map(
+          (file) =>
+            `${file.name}-${file.size}-${file.lastModified}`
+        )
+      );
+
+      const newFiles = files.filter(
+        (file) =>
+          !existingKeys.has(
+            `${file.name}-${file.size}-${file.lastModified}`
+          )
+      );
+
+      return [...prev, ...newFiles];
+    });
+
+    // Allow selecting the same file again later
+    event.target.value = "";
+  };
+
+  // ==========================================================
+  // REMOVE FILE
+  // ==========================================================
+
+  const removeFile = (index) => {
+    setSelectedFiles((prev) =>
+      prev.filter(
+        (_, fileIndex) =>
+          fileIndex !== index
+      )
+    );
+  };
+
+  // ==========================================================
   // RENDER
-  // --------------------------------------------------
+  // ==========================================================
 
   return (
     <div className="app">
 
-      {/* SIDEBAR OVERLAY */}
-      {menuOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
+      {/* ====================================================
+          HEADER
+      ==================================================== */}
 
-      {/* SIDEBAR */}
+      <header className="header">
+
+        <button
+          className="icon-button"
+          onClick={() =>
+            setMenuOpen((prev) => !prev)
+          }
+          aria-label="Open menu"
+          type="button"
+        >
+          <Menu size={24} />
+        </button>
+
+        <div className="logo">
+          <span className="logo-dot"></span>
+          SOLUTION AI
+        </div>
+
+        <button
+          className="icon-button"
+          onClick={handleSettings}
+          aria-label="Settings"
+          type="button"
+        >
+          <Settings size={22} />
+        </button>
+
+      </header>
+
+      {/* ====================================================
+          SIDEBAR
+      ==================================================== */}
+
       <aside
         className={`sidebar ${
           menuOpen ? "open" : ""
         }`}
       >
-        <div className="sidebar-header">
-          <div className="brand">
-            <div className="brand-icon">
-              S
-            </div>
 
-            <div>
-              <h2>Solution AI</h2>
-              <span>AI Assistant</span>
-            </div>
-          </div>
-
-          <button
-            className="icon-button"
-            onClick={() =>
-              setMenuOpen(false)
-            }
-          >
-            <X size={20} />
-          </button>
+        <div className="sidebar-title">
+          SOLUTION AI
         </div>
 
+        {/* NEW CONVERSATION */}
+
         <button
-          className="new-chat-button"
-          onClick={startNewConversation}
+          className="new-chat"
+          onClick={
+            handleNewConversation
+          }
+          type="button"
         >
-          <Plus size={19} />
-          New Chat
+          <Plus size={17} />
+          New Conversation
         </button>
 
-        <nav className="sidebar-nav">
+        {/* NAVIGATION */}
+
+        <nav>
+
           <button
-            className={
-              activePanel === "chat"
-                ? "nav-item active"
-                : "nav-item"
+            onClick={
+              handleConversations
             }
-            onClick={() =>
-              openPanel("chat")
-            }
+            type="button"
           >
-            <MessageSquare size={19} />
-            Chat
+            <MessageSquare size={17} />
+            Conversations
           </button>
 
           <button
-            className={
-              activePanel === "history"
-                ? "nav-item active"
-                : "nav-item"
-            }
-            onClick={() =>
-              openPanel("history")
-            }
+            onClick={handleHistory}
+            type="button"
           >
-            <HistoryIcon size={19} />
+            <HistoryIcon size={17} />
             History
           </button>
 
           <button
-            className={
-              activePanel === "settings"
-                ? "nav-item active"
-                : "nav-item"
-            }
-            onClick={() =>
-              openPanel("settings")
-            }
+            onClick={handleSettings}
+            type="button"
           >
-            <Settings size={19} />
+            <Settings size={17} />
             Settings
           </button>
+
         </nav>
 
-        <div className="sidebar-section">
-          <div className="sidebar-section-title">
-            Recent conversations
-          </div>
-
-          {loadingConversations ? (
-            <div className="sidebar-loading">
-              Loading...
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="sidebar-empty">
-              No conversations yet.
-            </div>
-          ) : (
-            <div className="conversation-list">
-              {conversations.map(
-                (conversation) => (
-                  <button
-                    key={conversation.id}
-                    className={`conversation-item ${
-                      conversationId ===
-                      conversation.id
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      loadConversation(
-                        conversation.id
-                      )
-                    }
-                  >
-                    <MessageSquare
-                      size={16}
-                    />
-
-                    <span>
-                      {conversation.title ||
-                        "New conversation"}
-                    </span>
-                  </button>
-                )
-              )}
-            </div>
-          )}
-        </div>
       </aside>
 
-      {/* MAIN */}
+      {/* ====================================================
+          MAIN
+      ==================================================== */}
+
       <main className="main">
 
-        {/* HEADER */}
-        <header className="topbar">
-          <button
-            className="icon-button menu-button"
-            onClick={() =>
-              setMenuOpen(true)
-            }
-          >
-            <Menu size={22} />
-          </button>
+        {/* ==================================================
+            ROBOT
+        ================================================== */}
 
-          <div className="topbar-title">
-            <h1>Solution AI</h1>
-            <span>
-              {activePanel === "chat"
-                ? "Your AI computer assistant"
-                : activePanel ===
-                  "history"
-                ? "Conversation history"
-                : "Settings"}
-            </span>
+        <section className="robot-container">
+
+          <div className="robot-glow"></div>
+
+          <div className="robot">
+
+            <div className="robot-head">
+
+              <div className="antenna">
+                <div className="antenna-light"></div>
+              </div>
+
+              <div className="robot-face">
+
+                <div className="eyes">
+
+                  <div className="eye"></div>
+
+                  <div className="eye"></div>
+
+                </div>
+
+                <div className="mouth">
+                  <div className="mouth-inner"></div>
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
 
-          <button
-            className="icon-button"
-            onClick={() =>
-              loadConversations()
-            }
-            title="Refresh conversations"
-          >
-            <RefreshCw
-              size={19}
-              className={
-                loadingConversations
-                  ? "spin"
+          <div className="voice-status">
+
+            <span
+              className={`status-dot ${
+                isListening
+                  ? "active"
                   : ""
-              }
-            />
-          </button>
-        </header>
+              }`}
+            ></span>
 
-        {/* CONTENT */}
-        <div className="content">
+            <span>
+              {isListening
+                ? "Listening..."
+                : isProcessing
+                ? "Thinking..."
+                : 'Say "Hey Solution"'}
+            </span>
 
-          {/* CHAT */}
-          {activePanel === "chat" && (
-            <div className="chat-container">
+          </div>
 
-              <div className="chat-messages">
+          {transcript && (
+            <div className="transcript">
 
-                {loadingConversation && (
-                  <div className="chat-message assistant">
-                    <span>
-                      Solution AI
-                    </span>
-                    <p>
-                      Loading conversation...
-                    </p>
-                  </div>
-                )}
+              <span>You:</span>
 
-                {messages.length === 0 &&
-                  !loadingConversation && (
-                    <div className="welcome">
-                      <div className="welcome-icon">
-                        S
-                      </div>
-
-                      <h2>
-                        Welcome to Solution AI
-                      </h2>
-
-                      <p>
-                        Your AI assistant for
-                        chatting, computer
-                        control, files, web
-                        search, and more.
-                      </p>
-
-                      <div className="suggestions">
-                        <button
-                          onClick={() =>
-                            setMessage(
-                              "What can you do?"
-                            )
-                          }
-                        >
-                          What can you do?
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            setMessage(
-                              "What is my computer screen size?"
-                            )
-                          }
-                        >
-                          Check my screen size
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            setMessage(
-                              "Take a screenshot of my screen and tell me what you see."
-                            )
-                          }
-                        >
-                          Analyze my screen
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                {messages.map(
-                  (msg, index) => (
-                    <div
-                      key={`${msg.role}-${index}`}
-                      className={`chat-message ${msg.role}`}
-                    >
-                      <span>
-                        {msg.role ===
-                        "user"
-                          ? "You"
-                          : "Solution AI"}
-                      </span>
-
-                      {/* FILES */}
-                      {msg.files &&
-                        msg.files.length >
-                          0 && (
-                          <div className="message-files">
-                            {msg.files.map(
-                              (
-                                fileName,
-                                fileIndex
-                              ) => (
-                                <div
-                                  className="message-file"
-                                  key={
-                                    `${fileName}-${fileIndex}`
-                                  }
-                                >
-                                  📎{" "}
-                                  {fileName}
-                                </div>
-                              )
-                            )}
-                          </div>
-                        )}
-
-                      {/* MESSAGE */}
-                      <p>
-                        {msg.content}
-                      </p>
-
-                      {/* CONFIRMATION */}
-                      {msg.confirmation_required &&
-                        msg.confirmation_id && (
-                          <div className="confirmation-box">
-
-                            <div className="confirmation-text">
-                              {msg.description ||
-                                "This action requires your confirmation."}
-                            </div>
-
-                            <div className="confirmation-buttons">
-
-                              <button
-                                className="confirm-button"
-                                onClick={() =>
-                                  handleConfirmation(
-                                    msg.confirmation_id,
-                                    true
-                                  )
-                                }
-                                disabled={sending}
-                              >
-                                Allow
-                              </button>
-
-                              <button
-                                className="deny-button"
-                                onClick={() =>
-                                  handleConfirmation(
-                                    msg.confirmation_id,
-                                    false
-                                  )
-                                }
-                                disabled={sending}
-                              >
-                                Deny
-                              </button>
-
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                  )
-                )}
-
-                {/* THINKING */}
-                {sending && (
-                  <div className="chat-message assistant">
-                    <span>
-                      Solution AI
-                    </span>
-
-                    <p className="thinking">
-                      Thinking...
-                    </p>
-                  </div>
-                )}
-
-              </div>
-
-              {/* ERROR */}
-              {error && (
-                <div className="error-message">
-                  {error}
-                </div>
-              )}
-
-              {/* SELECTED FILES */}
-              {selectedFiles.length >
-                0 && (
-                <div className="selected-files">
-                  {selectedFiles.map(
-                    (file, index) => (
-                      <div
-                        className="selected-file"
-                        key={`${file.name}-${file.size}-${index}`}
-                      >
-                        <span>
-                          📎 {file.name}
-                        </span>
-
-                        <button
-                          onClick={() =>
-                            removeSelectedFile(
-                              index
-                            )
-                          }
-                        >
-                          <X size={15} />
-                        </button>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
-
-              {/* INPUT */}
-              <div className="input-area">
-
-                <button
-                  className="input-button"
-                  title="Attach file"
-                  onClick={() =>
-                    fileInputRef.current?.click()
-                  }
-                >
-                  <Paperclip size={20} />
-                </button>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  hidden
-                  multiple
-                  accept="
-                    .txt,
-                    .md,
-                    .py,
-                    .js,
-                    .jsx,
-                    .ts,
-                    .tsx,
-                    .css,
-                    .html,
-                    .htm,
-                    .sql,
-                    .json,
-                    .xml,
-                    .yaml,
-                    .yml,
-                    .log,
-                    .env,
-                    .csv,
-                    .pdf,
-                    .docx
-                  "
-                  onChange={
-                    handleFileChange
-                  }
-                />
-
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(event) =>
-                    setMessage(
-                      event.target.value
-                    )
-                  }
-                  onKeyDown={
-                    handleTextareaKeyDown
-                  }
-                  placeholder={
-                    isListening
-                      ? "Listening..."
-                      : "Message Solution AI..."
-                  }
-                  rows={1}
-                />
-
-                {voiceSupported && (
-                  <button
-                    className={`input-button voice-button ${
-                      isListening
-                        ? "listening"
-                        : ""
-                    }`}
-                    title={
-                      isListening
-                        ? "Stop listening"
-                        : "Voice input"
-                    }
-                    onClick={() => {
-                      if (isListening) {
-                        stopListening();
-                      } else {
-                        startListening();
-                      }
-                    }}
-                  >
-                    <Mic size={20} />
-                  </button>
-                )}
-
-                <button
-                  className="send-button"
-                  onClick={handleSend}
-                  disabled={
-                    sending ||
-                    (!message.trim() &&
-                      selectedFiles.length ===
-                        0)
-                  }
-                  title="Send message"
-                >
-                  <Send size={19} />
-                </button>
-
-              </div>
-
-              <div className="input-hint">
-                Press Enter to send • Shift +
-                Enter for a new line
-              </div>
+              <p>{transcript}</p>
 
             </div>
           )}
 
-          {/* HISTORY */}
-          {activePanel === "history" && (
-            <div className="panel">
+          {reply && (
+            <div className="transcript">
 
-              <div className="panel-header">
-                <div>
-                  <h2>
-                    Conversation History
-                  </h2>
+              <span>
+                Solution AI:
+              </span>
 
-                  <p>
-                    Your previous Solution AI
-                    conversations.
-                  </p>
-                </div>
+              <p>{reply}</p>
+
+            </div>
+          )}
+
+        </section>
+
+        {/* ==================================================
+            ERROR
+        ================================================== */}
+
+        {error && (
+          <div className="error-message">
+
+            <span>{error}</span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setError("")
+              }
+              aria-label="Close error"
+            >
+              <X size={16} />
+            </button>
+
+          </div>
+        )}
+
+        {/* ==================================================
+            PANELS
+        ================================================== */}
+
+        {activePanel && (
+          <section className="side-panel">
+
+            {/* PANEL HEADER */}
+
+            <div className="side-panel-header">
+
+              <h2>
+                {activePanel ===
+                  "conversations" &&
+                  "Conversations"}
+
+                {activePanel ===
+                  "history" &&
+                  "History"}
+
+                {activePanel ===
+                  "settings" &&
+                  "Settings"}
+              </h2>
+
+              <button
+                type="button"
+                onClick={closePanel}
+                aria-label="Close panel"
+              >
+                <X size={20} />
+              </button>
+
+            </div>
+
+            {/* =================================================
+                CONVERSATIONS / HISTORY
+            ================================================= */}
+
+            {(activePanel ===
+              "conversations" ||
+              activePanel ===
+                "history") && (
+
+              <div className="conversation-list">
+
+                {/* NEW CHAT */}
+
+                <button
+                  className="panel-new-chat"
+                  onClick={
+                    handleNewConversation
+                  }
+                  type="button"
+                >
+                  <Plus size={17} />
+                  New Conversation
+                </button>
+
+                {/* LOADING */}
+
+                {loadingConversations && (
+                  <div className="panel-empty">
+                    Loading conversations...
+                  </div>
+                )}
+
+                {/* LOADING SINGLE CONVERSATION */}
+
+                {loadingConversation && (
+                  <div className="panel-empty">
+                    Opening conversation...
+                  </div>
+                )}
+
+                {/* EMPTY */}
+
+                {!loadingConversations &&
+                  conversations.length ===
+                    0 && (
+                    <div className="panel-empty">
+                      No conversations yet.
+                    </div>
+                  )}
+
+                {/* CONVERSATION LIST */}
+
+                {!loadingConversations &&
+                  conversations.length >
+                    0 && (
+                    <div className="conversation-items">
+
+                      {conversations.map(
+                        (conversation) => (
+                          <button
+                            className={`conversation-item ${
+                              conversation.id ===
+                              conversationId
+                                ? "active"
+                                : ""
+                            }`}
+                            key={
+                              conversation.id
+                            }
+                            onClick={() =>
+                              openConversation(
+                                conversation.id
+                              )
+                            }
+                            type="button"
+                          >
+
+                            <MessageSquare
+                              size={17}
+                            />
+
+                            <div>
+
+                              <strong>
+                                {conversation.title ||
+                                  "Untitled Conversation"}
+                              </strong>
+
+                              <small>
+                                {conversation.updated_at
+                                  ? new Date(
+                                      conversation.updated_at
+                                    ).toLocaleString()
+                                  : ""}
+                              </small>
+
+                            </div>
+
+                          </button>
+                        )
+                      )}
+
+                    </div>
+                  )}
+
+                {/* REFRESH */}
 
                 <button
                   className="refresh-button"
                   onClick={
                     loadConversations
                   }
+                  disabled={
+                    loadingConversations
+                  }
+                  type="button"
                 >
-                  <RefreshCw size={17} />
-                  Refresh
+
+                  <RefreshCw
+                    size={16}
+                    className={
+                      loadingConversations
+                        ? "spin"
+                        : ""
+                    }
+                  />
+
+                  {loadingConversations
+                    ? "Refreshing..."
+                    : "Refresh"}
+
                 </button>
+
               </div>
+            )}
 
-              {loadingConversations ? (
-                <div className="panel-empty">
-                  Loading conversations...
+            {/* =================================================
+                SETTINGS
+            ================================================= */}
+
+            {activePanel ===
+              "settings" && (
+
+              <div className="settings-panel">
+
+                <div className="setting-item">
+
+                  <strong>
+                    Backend
+                  </strong>
+
+                  <span>
+                    {API_BASE_URL}
+                  </span>
+
                 </div>
-              ) : conversations.length ===
-                0 ? (
-                <div className="panel-empty">
-                  <MessageSquare size={40} />
 
-                  <h3>
-                    No conversations
-                  </h3>
+                <div className="setting-item">
+
+                  <strong>
+                    AI Status
+                  </strong>
+
+                  <span>
+                    Solution AI backend
+                  </span>
+
+                </div>
+
+                <div className="setting-item">
+
+                  <strong>
+                    Voice
+                  </strong>
+
+                  <span>
+                    {isListening
+                      ? "Listening"
+                      : isProcessing
+                      ? "Processing"
+                      : "Ready"}
+                  </span>
+
+                </div>
+
+                <div className="setting-item">
+
+                  <strong>
+                    Current Conversation
+                  </strong>
+
+                  <span>
+                    {conversationId
+                      ? conversationId
+                      : "New conversation"}
+                  </span>
+
+                </div>
+
+              </div>
+            )}
+
+          </section>
+        )}
+
+        {/* ==================================================
+            CHAT
+        ================================================== */}
+
+        <section className="chat-area">
+
+          <div className="chat-messages">
+
+            {messages.map(
+              (msg, index) => (
+
+                <div
+                  key={`${msg.role}-${index}`}
+                  className={`chat-message ${msg.role}`}
+                >
+
+                  <span>
+                    {msg.role ===
+                    "user"
+                      ? "You"
+                      : "Solution AI"}
+                  </span>
+
+                  {/* FILES */}
+
+                  {msg.files &&
+                    msg.files.length >
+                      0 && (
+
+                      <div className="message-files">
+
+                        {msg.files.map(
+                          (
+                            filename,
+                            fileIndex
+                          ) => (
+
+                            <div
+                              className="message-file"
+                              key={`${filename}-${fileIndex}`}
+                            >
+                              📎{" "}
+                              {filename}
+                            </div>
+
+                          )
+                        )}
+
+                      </div>
+                    )}
+
+                  {/* MESSAGE */}
 
                   <p>
-                    Start a new chat to see it
-                    here.
+                    {msg.content}
                   </p>
-                </div>
-              ) : (
-                <div className="history-list">
-                  {conversations.map(
-                    (conversation) => (
+
+                  {/* CONFIRMATION */}
+
+                  {msg.confirmation_required &&
+                    msg.confirmation_id && (
+
+                    <div className="confirmation-buttons">
+
                       <button
-                        className="history-item"
-                        key={conversation.id}
+                        className="confirmation-yes"
                         onClick={() =>
-                          loadConversation(
-                            conversation.id
+                          handleConfirmation(
+                            msg.confirmation_id,
+                            true
                           )
                         }
+                        type="button"
                       >
-                        <MessageSquare
-                          size={19}
-                        />
-
-                        <div>
-                          <strong>
-                            {conversation.title ||
-                              "New conversation"}
-                          </strong>
-
-                          <span>
-                            {conversation.updated_at
-                              ? new Date(
-                                  conversation.updated_at
-                                ).toLocaleString()
-                              : ""}
-                          </span>
-                        </div>
+                        ✓ Yes
                       </button>
-                    )
+
+                      <button
+                        className="confirmation-no"
+                        onClick={() =>
+                          handleConfirmation(
+                            msg.confirmation_id,
+                            false
+                          )
+                        }
+                        type="button"
+                      >
+                        ✕ No
+                      </button>
+
+                    </div>
                   )}
+
                 </div>
+              )
+            )}
+
+            {/* SENDING */}
+
+            {sending && (
+              <div className="chat-message assistant">
+
+                <span>
+                  Solution AI
+                </span>
+
+                <p>
+                  {selectedFiles.length > 0
+                    ? "Reading your file and thinking..."
+                    : "Thinking..."}
+                </p>
+
+              </div>
+            )}
+
+          </div>
+
+          {/* =================================================
+              SELECTED FILES
+          ================================================= */}
+
+          {selectedFiles.length > 0 && (
+
+            <div className="selected-files">
+
+              {selectedFiles.map(
+                (file, index) => (
+
+                  <div
+                    className="file-preview"
+                    key={`${file.name}-${file.size}-${index}`}
+                  >
+
+                    <span>
+                      📎 {file.name}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeFile(index)
+                      }
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      <X size={15} />
+                    </button>
+
+                  </div>
+
+                )
               )}
 
             </div>
           )}
 
-          {/* SETTINGS */}
-          {activePanel === "settings" && (
-            <div className="panel">
+          {/* =================================================
+              CHAT BAR
+          ================================================= */}
 
-              <div className="panel-header">
-                <div>
-                  <h2>Settings</h2>
+          <div className="chat-bar">
 
-                  <p>
-                    Configure your Solution AI
-                    experience.
-                  </p>
-                </div>
-              </div>
+            {/* FILE BUTTON */}
 
-              <div className="settings-card">
+            <button
+              className="chat-icon-button"
+              onClick={() =>
+                fileInputRef.current?.click()
+              }
+              aria-label="Attach file"
+              type="button"
+              disabled={sending}
+            >
+              <Paperclip size={21} />
+            </button>
 
-                <div className="setting-row">
-                  <div>
-                    <strong>
-                      AI Assistant
-                    </strong>
+            {/* FILE INPUT */}
 
-                    <span>
-                      Solution AI backend
-                    </span>
-                  </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              hidden
+              onChange={
+                handleFileChange
+              }
+              accept=".txt,.md,.pdf,.docx,.csv,.json,.xml,.yaml,.yml,.py,.js,.jsx,.ts,.tsx,.css,.html,.htm,.sql"
+            />
 
-                  <div className="status-badge">
-                    Connected
-                  </div>
-                </div>
+            {/* TEXT INPUT */}
 
-                <div className="setting-row">
-                  <div>
-                    <strong>
-                      Voice Input
-                    </strong>
+            <input
+              className="chat-input"
+              type="text"
+              value={message}
+              onChange={(event) =>
+                setMessage(
+                  event.target.value
+                )
+              }
+              onKeyDown={
+                handleKeyDown
+              }
+              placeholder={
+                selectedFiles.length > 0
+                  ? "Ask Solution AI about your file..."
+                  : "Type a message..."
+              }
+              autoComplete="off"
+              disabled={sending}
+            />
 
-                    <span>
-                      Use your microphone to talk
-                      to Solution AI.
-                    </span>
-                  </div>
+            {/* MICROPHONE */}
 
-                  <div className="status-badge">
-                    {voiceSupported
-                      ? "Available"
-                      : "Unavailable"}
-                  </div>
-                </div>
+            <button
+              className={
+                isListening
+                  ? "chat-icon-button mic-active"
+                  : "chat-icon-button"
+              }
+              onClick={
+                toggleListening
+              }
+              aria-label="Activate microphone"
+              type="button"
+              disabled={sending}
+            >
+              <Mic size={21} />
+            </button>
 
-                <div className="setting-row">
-                  <div>
-                    <strong>
-                      Backend
-                    </strong>
+            {/* SEND */}
 
-                    <span>
-                      {API_BASE_URL}
-                    </span>
-                  </div>
-                </div>
+            <button
+              className="send-button"
+              onClick={
+                handleSend
+              }
+              aria-label="Send message"
+              type="button"
+              disabled={
+                sending ||
+                (!message.trim() &&
+                  selectedFiles.length ===
+                    0)
+              }
+            >
+              <Send size={19} />
+            </button>
 
-              </div>
-            </div>
-          )}
+          </div>
 
-        </div>
+        </section>
+
       </main>
+
     </div>
   );
 }
